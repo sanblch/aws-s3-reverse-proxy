@@ -157,7 +157,11 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 	accessKeyID := h.AWSCredentials[keys[0]]
 
 	// Get the AWS Signature signer for this AccessKey
-	signer := h.Signers[accessKeyID]
+	signer, ok := h.Signers[accessKeyID]
+	if !ok {
+		return nil, fmt.Errorf("Signer not found")
+	}
+
 
 	// Assemble a new upstream request
 	proxyReq, err := h.assembleUpstreamReq(signer, req, "")
