@@ -1,4 +1,4 @@
-module github.com/Kriechi/aws-s3-reverse-proxy
+module github.com/velovec/aws-s3-reverse-proxy
 
 require (
 	github.com/aws/aws-sdk-go v1.31.4
