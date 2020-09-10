@@ -61,67 +61,6 @@ func signRequest(r *http.Request) {
 	signer.Sign(r, body, "s3", "eu-test-1", signTime)
 }
 
-func verifySignature(w http.ResponseWriter, r *http.Request) {
-	// save copy of the received signature
-	receivedAuthorization := r.Header["Authorization"][0]
-
-	// delete headers to get clean signature
-	r.Header.Del("accept-encoding")
-	r.Header.Del("authorization")
-
-	// compute the expected signature with valid credentials
-	body := bytes.NewReader([]byte{})
-	signTime, _ := time.Parse("20060102T150405Z", r.Header["X-Amz-Date"][0])
-	signer := v4.NewSigner(credentials.NewStaticCredentialsFromCreds(credentials.Value{
-		AccessKeyID:     "fooooooooooooooo",
-		SecretAccessKey: "bar",
-	}))
-	signer.Sign(r, body, "s3", "eu-test-1", signTime)
-	expectedAuthorization := r.Header["Authorization"][0]
-
-	// verify signature
-	fmt.Fprintln(w, receivedAuthorization, expectedAuthorization)
-	if receivedAuthorization == expectedAuthorization {
-		fmt.Fprintln(w, "ok")
-	} else {
-		fmt.Fprintln(w, "failed signature check")
-	}
-}
-
-func TestHandlerMissingAuthorization(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	req.Header.Set("X-Amz-Date", "20060102T150405Z")
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "Authorization header missing or set multiple times")
-}
-
-func TestHandlerMissingCredential(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	req.Header.Set("X-Amz-Date", "20060102T150405Z")
-	req.Header.Set("Authorization", "foobar")
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "invalid Authorization header: Credential not found")
-}
-
-func TestHandlerInvalidCredential(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	req.Header.Set("X-Amz-Date", "20060102T150405Z")
-	req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential=XXXooooooooooooo/20060102/eu-test-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=a0d5e0c0924c1f9298c5f2a3925e202657bf1e239a1d6856235cbe0702855334") // signature computed manually for this test case
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "invalid AccessKeyID in Credential")
-}
 
 func TestHandlerInvalidSourceSubnet(t *testing.T) {
 	h := newTestProxy(t)

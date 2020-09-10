@@ -109,61 +109,6 @@ func (h *Handler) validateIncomingSourceIP(req *http.Request) error {
 	return nil
 }
 
-func (h *Handler) validateIncomingHeaders(req *http.Request) (string, string, error) {
-	authorizationHeader := req.Header["Authorization"]
-	if len(authorizationHeader) != 1 {
-		return "", "", fmt.Errorf("Authorization header missing or set multiple times: %v", req)
-	}
-	match := awsAuthorizationCredentialRegexp.FindStringSubmatch(authorizationHeader[0])
-	if len(match) != 3 {
-		return "", "", fmt.Errorf("invalid Authorization header: Credential not found: %v", req)
-	}
-	receivedAccessKeyID := match[1]
-	region := match[2]
-
-	// Validate the received Credential (ACCESS_KEY_ID) is allowed
-	for accessKeyID := range h.AWSCredentials {
-		if subtle.ConstantTimeCompare([]byte(receivedAccessKeyID), []byte(accessKeyID)) == 1 {
-			return accessKeyID, region, nil
-		}
-	}
-	return "", "", fmt.Errorf("invalid AccessKeyID in Credential: %v", req)
-}
-
-func (h *Handler) generateFakeIncomingRequest(signer *v4.Signer, req *http.Request, region string) (*http.Request, error) {
-	fakeReq, err := http.NewRequest(req.Method, req.URL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	fakeReq.URL.RawPath = req.URL.Path
-
-	// We already validated there there is exactly one Authorization header
-	authorizationHeader := req.Header.Get("authorization")
-	match := awsAuthorizationSignedHeadersRegexp.FindStringSubmatch(authorizationHeader)
-	if len(match) == 2 {
-		for _, header := range strings.Split(match[1], ";") {
-			fakeReq.Header.Set(header, req.Header.Get(header))
-		}
-	}
-
-	// Delete a potentially double-added header
-	fakeReq.Header.Del("host")
-	fakeReq.Host = h.AllowedSourceEndpoint
-
-	// The X-Amz-Date header contains a timestamp, such as: 20190929T182805Z
-	signTime, err := time.Parse("20060102T150405Z", req.Header["X-Amz-Date"][0])
-	if err != nil {
-		return nil, fmt.Errorf("error parsing X-Amz-Date %v - %v", req.Header["X-Amz-Date"][0], err)
-	}
-
-	// Sign the fake request with the original timestamp
-	if err := h.signWithTime(signer, fakeReq, region, signTime); err != nil {
-		return nil, err
-	}
-
-	return fakeReq, nil
-}
-
 func (h *Handler) assembleUpstreamReq(signer *v4.Signer, req *http.Request, region string) (*http.Request, error) {
 	upstreamEndpoint := h.UpstreamEndpoint
 	if len(upstreamEndpoint) == 0 {
@@ -205,11 +150,7 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 		return nil, err
 	}
 
-	// Validate incoming headers and extract AWS_ACCESS_KEY_ID
-	accessKeyID, region, err := h.validateIncomingHeaders(req)
-	if err != nil {
-		return nil, err
-	}
+	accessKeyID := h.AWSCredentials[0]
 
 	// Get the AWS Signature signer for this AccessKey
 	signer := h.Signers[accessKeyID]
