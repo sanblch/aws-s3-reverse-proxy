@@ -33,9 +33,9 @@ credentials to re-sign each request.
 ## Releases
 
 Get the latest Docker image from [from
-DockerHub](https://hub.docker.com/r/thomaskriechbaumer/aws-s3-reverse-proxy/tags)
+DockerHub](https://hub.docker.com/r/velovec/aws-s3-reverse-proxy/tags)
 or download the source release [from
-GitHub](https://github.com/Kriechi/aws-s3-reverse-proxy/releases).
+GitHub](https://github.com/velovec/aws-s3-reverse-proxy/releases).
 
 ## Features
 
