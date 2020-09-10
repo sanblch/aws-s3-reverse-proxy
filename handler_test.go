@@ -111,29 +111,6 @@ func TestHandlerMissingCredential(t *testing.T) {
 	assert.Contains(t, resp.Body.String(), "invalid Authorization header: Credential not found")
 }
 
-func TestHandlerInvalidSignature(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	req.Header.Set("X-Amz-Date", "20060102T150405Z")
-	req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential=fooooooooooooooo/20190101/eu-test-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=some-signature")
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "invalid signature in Authorization header")
-}
-
-func TestHandlerValidSignature(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	signRequest(req)
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 200, resp.Code)
-	assert.Contains(t, resp.Body.String(), "Hello, client")
-}
-
 func TestHandlerInvalidCredential(t *testing.T) {
 	h := newTestProxy(t)
 
