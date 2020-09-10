@@ -88,16 +88,6 @@ func verifySignature(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func TestHandlerMissingAmzDate(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "X-Amz-Date header missing or set multiple times")
-}
-
 func TestHandlerMissingAuthorization(t *testing.T) {
 	h := newTestProxy(t)
 
