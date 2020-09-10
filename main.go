@@ -119,6 +119,7 @@ func main() {
 	}
 	log.Infof("Accepting incoming requests for this endpoint: %v", handler.AllowedSourceEndpoint)
 	log.Infof("Parsed %d AWS credential sets.", len(handler.AWSCredentials))
+	log.Infof("Just a short message to understand that everything is OK")
 
 	if len(opts.PprofListenAddr) > 0 && len(strings.Split(opts.PprofListenAddr, ":")) == 2 {
 		// avoid leaking pprof to the main application http servers
