@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/subtle"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -10,7 +9,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-	"strings"
 	"time"
 
 	v4 "github.com/aws/aws-sdk-go/aws/signer/v4"
@@ -150,13 +148,18 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 		return nil, err
 	}
 
-	accessKeyID := h.AWSCredentials[0]
+	keys := make([]string, 0, len(h.AWSCredentials))
+	for k := range h.AWSCredentials {
+	        keys = append(keys, k)
+	}
+
+	accessKeyID := h.AWSCredentials[keys[0]]
 
 	// Get the AWS Signature signer for this AccessKey
 	signer := h.Signers[accessKeyID]
 
 	// Assemble a new upstream request
-	proxyReq, err := h.assembleUpstreamReq(signer, req, region)
+	proxyReq, err := h.assembleUpstreamReq(signer, req, "")
 	if err != nil {
 		return nil, err
 	}
