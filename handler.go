@@ -131,6 +131,7 @@ func (h *Handler) assembleUpstreamReq(signer *v4.Signer, req *http.Request, regi
 
 	// Sign the upstream request
 	if err := h.sign(signer, proxyReq, region); err != nil {
+	        log.Infof("Unable to Sing request")
 		return nil, err
 	}
 
@@ -161,6 +162,7 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 	// Assemble a new upstream request
 	proxyReq, err := h.assembleUpstreamReq(signer, req, "")
 	if err != nil {
+	        log.Infof("Unable to assemble request")
 		return nil, err
 	}
 
