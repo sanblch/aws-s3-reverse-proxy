@@ -110,11 +110,6 @@ func (h *Handler) validateIncomingSourceIP(req *http.Request) error {
 }
 
 func (h *Handler) validateIncomingHeaders(req *http.Request) (string, string, error) {
-	amzDateHeader := req.Header["X-Amz-Date"]
-	if len(amzDateHeader) != 1 {
-		return "", "", fmt.Errorf("X-Amz-Date header missing or set multiple times: %v", req)
-	}
-
 	authorizationHeader := req.Header["Authorization"]
 	if len(authorizationHeader) != 1 {
 		return "", "", fmt.Errorf("Authorization header missing or set multiple times: %v", req)
@@ -218,29 +213,6 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 
 	// Get the AWS Signature signer for this AccessKey
 	signer := h.Signers[accessKeyID]
-
-	// Assemble a signed fake request to verify the incoming requests signature
-	fakeReq, err := h.generateFakeIncomingRequest(signer, req, region)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify that the fake request and the incoming request have the same signature
-	// This ensures it was sent and signed by a client with correct AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-	cmpResult := subtle.ConstantTimeCompare([]byte(fakeReq.Header["Authorization"][0]), []byte(req.Header["Authorization"][0]))
-	if cmpResult == 0 {
-		v, _ := httputil.DumpRequest(fakeReq, false)
-		log.Debugf("Fake request: %v", string(v))
-
-		v, _ = httputil.DumpRequest(req, false)
-		log.Debugf("Incoming request: %v", string(v))
-		return nil, fmt.Errorf("invalid signature in Authorization header")
-	}
-
-	if log.GetLevel() == log.DebugLevel {
-		initialReqDump, _ := httputil.DumpRequest(req, false)
-		log.Debugf("Initial request dump: %v", string(initialReqDump))
-	}
 
 	// Assemble a new upstream request
 	proxyReq, err := h.assembleUpstreamReq(signer, req, region)
