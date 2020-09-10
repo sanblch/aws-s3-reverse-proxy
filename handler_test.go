@@ -137,18 +137,6 @@ func TestHandlerInvalidSourceSubnet(t *testing.T) {
 	assert.Contains(t, resp.Body.String(), "source IP not allowed")
 }
 
-func TestHandlerInvalidAmzDate(t *testing.T) {
-	h := newTestProxy(t)
-
-	req := httptest.NewRequest(http.MethodGet, "http://foobar.example.com", nil)
-	req.Header.Set("X-Amz-Date", "foobar")
-	req.Header.Set("Authorization", "AWS4-HMAC-SHA256 Credential=fooooooooooooooo/20060102/eu-test-1/s3/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=a0d5e0c0924c1f9298c5f2a3925e202657bf1e239a1d6856235cbe0702855334") // signature computed manually for this test case
-	resp := httptest.NewRecorder()
-	h.ServeHTTP(resp, req)
-	assert.Equal(t, 400, resp.Code)
-	assert.Contains(t, resp.Body.String(), "error parsing X-Amz-Date foobar")
-}
-
 func TestHandlerRawPathEncodingMatchingSignature(t *testing.T) {
 	thf := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		verifySignature(w, r)
