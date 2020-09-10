@@ -154,7 +154,7 @@ func (h *Handler) buildUpstreamRequest(req *http.Request) (*http.Request, error)
 	        keys = append(keys, k)
 	}
 
-	accessKeyID := h.AWSCredentials[keys[0]]
+	accessKeyID := keys[0]
 
 	// Get the AWS Signature signer for this AccessKey
 	signer, ok := h.Signers[accessKeyID]
